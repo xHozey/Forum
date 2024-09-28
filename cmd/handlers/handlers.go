@@ -12,11 +12,17 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "lkjdflkjds", 500)
 		return
 	}
+	fmt.Println("done")
 
 	tmp.Execute(w, nil)
+
+	
 }
 
-func RegisterPage(w http.ResponseWriter, r *http.Request) {
+func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
+}
+
+func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginPage(w http.ResponseWriter, r *http.Request) {
@@ -27,14 +33,18 @@ func LoginPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		fmt.Println("waaa adrari")
 	}
-	err := r.ParseForm() 
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	
+
 	name := r.FormValue("name")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	fmt.Println(name, email, password)
+}
+
+func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
+
 }

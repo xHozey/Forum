@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE login (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    mail TEXT NOT NULL,
+    name TEXT NOT NULL,
     pasword TEXT NOT NULL,
 );
 -- +goose StatementEnd
