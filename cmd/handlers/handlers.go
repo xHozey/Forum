@@ -1,12 +1,14 @@
 package handlers
 
-import "net/http"
+import (
+	"net/http"
+)
 
-func HomePage(w http.ResponseWriter, r *http.Request) {
+func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 }
 
-func RegisterPage(w http.ResponseWriter, r *http.Request) {
+func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
 }
 
-func LoginPage(w http.ResponseWriter, r *http.Request) {
+func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
 }
