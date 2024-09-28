@@ -19,14 +19,10 @@ func HomePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
-	tmp, err := template.ParseFiles("./cmd/templates/index.html")
+	tmp, err := template.ParseFiles("/home/hamza/Desktop/Forum/cmd/templates/register.htm")
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -45,11 +41,6 @@ func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
 	tmp, err := template.ParseFiles("./cmd/templates/index.html")
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
