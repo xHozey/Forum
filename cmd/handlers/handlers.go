@@ -1,43 +1,41 @@
 package handlers
 
 import (
-	"fmt"
+	"database/sql"
 	"html/template"
 	"log"
 	"net/http"
-	"os"
+	"time"
 
 	"github.com/gofrs/uuid"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
+
+func (d *MyDB) authorize(r *http.Request) bool {
+	c, err := r.Cookie("session_token")
+	if err != nil {
+		return false
+	}
+
+	var uid string
+	d.MyData.QueryRow("SELECT uid FROM login WHERE uid = ?", c.Value).Scan(&uid)
+	if c.Value == uid {
+		return true
+	}
+	return false
+}
 
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	tmp, err := template.ParseFiles("./cmd/templates/index.html")
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	c, err := r.Cookie("session_token")
-	if err != nil {
-		fmt.Println(err)
-		http.Redirect(w, r, "/login", http.StatusFound) // Redirect to login if cookie not found
-		return
-	}
-
-	qry, err := d.MyData.Query("SELECT uid FROM login WHERE uid = ?", c.Value)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-	defer qry.Close()
-
-	if qry.Next() {
-		fmt.Println("youre good")
-	} else {
-		fmt.Println("session invalid")
-		http.Redirect(w, r, "/login", http.StatusFound)
+	authorized := d.authorize(r)
+	if !authorized {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -45,89 +43,127 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
-	tmp, err := template.ParseFiles("./cmd/templates/register.htm")
-	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+	if r.Method != http.MethodPost {
+		template.Must(template.ParseFiles("./cmd/templates/register.htm")).Execute(w, nil)
 		return
 	}
 
 	name := r.FormValue("user")
 	password := r.FormValue("password")
-	if name != "" && password != "" {
-		qry, err := d.MyData.Query("SELECT user FROM login WHERE user = ?", name)
-		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
-		}
-		defer qry.Close()
 
-		for qry.Next() {
-			var user string
-			err = qry.Scan(&user)
-			if err != nil {
-				http.Error(w, "internal server error", http.StatusInternalServerError)
-				return
-			}
-			if user == name {
-				http.Error(w, "user already exists", http.StatusConflict)
-				return
-			}
-		}
-
-		statement, err := d.MyData.Prepare("INSERT INTO login (user, pass, uid) VALUES (?, ?, ?)")
-		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
-		}
-		defer statement.Close()
-
-		_, err = statement.Exec(name, password, "")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(0)
-		}
-		http.Redirect(w, r, "/login", http.StatusMovedPermanently)
-
+	if name == "" || password == "" {
+		http.Error(w, "Username and password are required", http.StatusBadRequest)
+		return
 	}
 
-	tmp.Execute(w, nil)
+	var exists bool
+	err := d.MyData.QueryRow("SELECT 1 FROM login WHERE user = ?", name).Scan(&exists)
+	if err != nil && err != sql.ErrNoRows {
+		log.Printf("Database error: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if exists {
+		http.Error(w, "User already exists", http.StatusConflict)
+		return
+	}
+
+	uid := generateUID()
+	hashedPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("Password hashing error: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = d.MyData.Exec("INSERT INTO login (user, pass, uid) VALUES (?, ?, ?)", name, hashedPass, uid)
+	if err != nil {
+		log.Printf("Database error: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	setSessionCookie(w, uid)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
-	tmp, err := template.ParseFiles("./cmd/templates/login.html")
-	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+	if r.Method != http.MethodPost {
+		template.Must(template.ParseFiles("./cmd/templates/login.html")).Execute(w, nil)
 		return
 	}
 
 	name := r.FormValue("user")
 	password := r.FormValue("password")
-	statement, err := d.MyData.Query("SELECT user, pass FROM login")
+
+	var (
+		storedPassword string
+		uid            string
+	)
+	err := d.MyData.QueryRow("SELECT pass, uid FROM login WHERE user = ?", name).Scan(&storedPassword, &uid)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
-	}
-	for statement.Next() {
-		var user, pass string
-		statement.Scan(&user, &pass)
-		if user == name && password == pass {
-			u := uuid.Must(uuid.NewV4())
-			uid := u.String()
-			stm, err := d.MyData.Prepare("UPDATE login SET uid = ? WHERE user = ?")
-			if err != nil {
-				log.Fatal(err)
-			}
-			stm.Exec(uid, user)
-			http.SetCookie(w, &http.Cookie{
-				Name:   "session_token",
-				Value:  uid,
-				Path:   "/",
-				MaxAge: 60,
-			})
-
-			http.Redirect(w, r, "/", http.StatusMovedPermanently)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		} else {
+			log.Printf("Database error: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
+		return
 	}
 
-	tmp.Execute(w, nil)
+	if err := bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(password)); err != nil {
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	newUID := generateUID()
+	_, err = d.MyData.Exec("UPDATE login SET uid = ? WHERE user = ?", newUID, name)
+	if err != nil {
+		log.Printf("Database error: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	setSessionCookie(w, newUID)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (d *MyDB) Logout(w http.ResponseWriter, r *http.Request) {
+	c, err := r.Cookie("session_token")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = d.MyData.Exec("UPDATE login SET uid = '' WHERE uid = ?", c.Value)
+	if err != nil {
+		log.Printf("Database error during logout: %v", err)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func generateUID() string {
+	return uuid.Must(uuid.NewV4()).String()
+}
+
+func setSessionCookie(w http.ResponseWriter, uid string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    uid,
+		Path:     "/",
+		MaxAge:   3600,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Now().Add(3600 * time.Second),
+	})
 }

@@ -28,5 +28,6 @@ func main() {
 	http.HandleFunc("/", data.HomePage)
 	http.HandleFunc("/login", data.LoginPage)
 	http.HandleFunc("/register", data.RegisterPage)
+	http.HandleFunc("/logout", data.Logout)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
