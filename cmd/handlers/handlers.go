@@ -31,12 +31,8 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authorized := d.authorize(r)
-	if !authorized {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
 
-	tmp.Execute(w, nil)
+	tmp.Execute(w, authorized)
 }
 
 func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
