@@ -20,10 +20,7 @@ func (d *MyDB) authorize(r *http.Request) bool {
 
 	var uid string
 	d.MyData.QueryRow("SELECT uid FROM login WHERE uid = ?", c.Value).Scan(&uid)
-	if c.Value == uid {
-		return true
-	}
-	return false
+	return c.Value == uid
 }
 
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {

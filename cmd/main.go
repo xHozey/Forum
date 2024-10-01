@@ -13,6 +13,8 @@ import (
 )
 
 func main() {
+	fs := http.FileServer(http.Dir("./cmd/templates/visualize"))
+	http.Handle("/cmd/templates/visualize/", http.StripPrefix("/cmd/templates/visualize/", fs))
 	data := &handlers.MyDB{}
 	db, err := sql.Open("sqlite3", "./db/app.db")
 	if err != nil {
@@ -29,5 +31,6 @@ func main() {
 	http.HandleFunc("/login", data.LoginPage)
 	http.HandleFunc("/register", data.RegisterPage)
 	http.HandleFunc("/logout", data.Logout)
+	fmt.Println("http://localhost:8080/")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
