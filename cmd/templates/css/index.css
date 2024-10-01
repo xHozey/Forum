@@ -1,0 +1,27 @@
+ * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            background-color: azure;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        form {
+            width: 50%;
+            height: 50vh;
+            border: 1px dashed black;
+            /* display: none; */
+        }
+
+        div {
+            width: 60%;
+            height: 60px;
+            font-size: 1.25rem;
+        }
