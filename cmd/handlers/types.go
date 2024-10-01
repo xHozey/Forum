@@ -7,9 +7,11 @@ type MyDB struct {
 }
 
 type Post struct {
+	Id int
 	User    string
 	Post    string
 	Comment string
 	Like    int
 	Deslike int
+	auth bool
 }
