@@ -23,6 +23,11 @@ func (d *MyDB) authorize(r *http.Request) bool {
 	return c.Value == uid
 }
 
+func (d *MyDB) insertPost() {
+	d.MyData.Prepare("Insert ")
+}
+
+
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	tmp, err := template.ParseFiles("./cmd/templates/index.html")
 	if err != nil {
