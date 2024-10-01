@@ -17,11 +17,16 @@ func (d *MyDB) authorize(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
-
+	
 	var uid string
 	d.MyData.QueryRow("SELECT uid FROM login WHERE uid = ?", c.Value).Scan(&uid)
 	return c.Value == uid
 }
+
+func (d *MyDB) insertPost() {
+	d.MyData.Prepare("Insert ")
+}
+
 
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	tmp, err := template.ParseFiles("./cmd/templates/index.html")

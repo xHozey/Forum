@@ -25,7 +25,12 @@ func main() {
 		fmt.Println(err)
 		os.Exit(0)
 	}
-	db.Close()
+	stm.Exec()
+	stm, err = db.Prepare("CREATE TABLE IF NOT EXISTS posts (user TEXT NOT NULL, post TEXT NOT NULL, comments NOT NULL, likes INTEGER, deslikes INTEGER)")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(0)
+	}
 	stm.Exec()
 	data.MyData = db
 	http.HandleFunc("/", data.HomePage)
