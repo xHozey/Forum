@@ -25,6 +25,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(0)
 	}
+	db.Close()
 	stm.Exec()
 	data.MyData = db
 	http.HandleFunc("/", data.HomePage)
