@@ -5,28 +5,28 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gofrs/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (d *MyDB) authorize(r *http.Request) bool {
+func (d *MyDB) authorize(r *http.Request) (bool, string) {
 	c, err := r.Cookie("session_token")
 	if err != nil {
-		return false
+		return false, ""
 	}
-	
+
 	var uid string
-	d.MyData.QueryRow("SELECT uid FROM login WHERE uid = ?", c.Value).Scan(&uid)
-	return c.Value == uid
+	var username string
+	d.MyData.QueryRow("SELECT uid, user FROM login WHERE uid = ?", c.Value).Scan(&uid, &username)
+
+	return c.Value == uid, username
 }
 
 func (d *MyDB) insertPost() {
 	d.MyData.Prepare("Insert ")
 }
-
 
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	tmp, err := template.ParseFiles("./cmd/templates/index.html")
@@ -35,16 +35,20 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	authorized := d.authorize(r)
-
-	tmp.Execute(w, authorized)
+	authorized, username := d.authorize(r)
+	type test struct {
+		u string
+		n bool
+	}
+	j := test{u: username, n: authorized}
+	tmp.Execute(w, j)
 }
 
 func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		template.Must(template.ParseFiles("./cmd/templates/register.htm")).Execute(w, nil)
 		return
-		
+
 	}
 
 	name := r.FormValue("user")
@@ -130,7 +134,7 @@ func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
 
 func (d *MyDB) Logout(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie("session_token")
-	if err != nil {
+	if err != nil && err != http.ErrNoCookie {
 		log.Fatal(err)
 	}
 	_, err = d.MyData.Exec("UPDATE login SET uid = '' WHERE uid = ?", c.Value)
@@ -139,13 +143,10 @@ func (d *MyDB) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
+		Name:   "session_token",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
 	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
@@ -156,13 +157,9 @@ func generateUID() string {
 
 func setSessionCookie(w http.ResponseWriter, uid string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    uid,
-		Path:     "/",
-		MaxAge:   3600,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-		Expires:  time.Now().Add(3600 * time.Second),
+		Name:   "session_token",
+		Value:  uid,
+		Path:   "/",
+		MaxAge: 3600,
 	})
 }
