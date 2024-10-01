@@ -20,23 +20,51 @@ func (d *MyDB) authorize(r *http.Request) (bool, string) {
 
 	var uid string
 	var username string
-	d.MyData.QueryRow("SELECT uid, user FROM login WHERE uid = ?", c.Value).Scan(&uid, &username)
+	err = d.MyData.QueryRow("SELECT uid, user FROM login WHERE uid = ?", c.Value).Scan(&uid, &username)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, ""
+		}
+		fmt.Println("Database error:", err)
+		return false, ""
+	}
 
 	return c.Value == uid, username
 }
 
-func (d *MyDB) insertPost(post string, user string) {
+func (d *MyDB) insertPost(post string, user string) error {
 	stm, err := d.MyData.Prepare("INSERT INTO posts (post, user) VALUES (?, ?)")
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-	stm.Exec(post, user)
+	defer stm.Close()
+
+	_, err = stm.Exec(post, user)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (d *MyDB) getPosts(user string) Post {
-	postInfo := Post{}
-	d.MyData.QueryRow("SELECT (user, id, likes, deslikes, post) FROM posts WHERE user = ?", user).Scan(&postInfo.User, &postInfo.Id, &postInfo.Like, &postInfo.Deslike, &postInfo.Post)
-	return postInfo
+func (d *MyDB) getPosts(user string) ([]Post, error) {
+	rows, err := d.MyData.Query("SELECT user, id, likes, dislikes, post FROM posts WHERE user = ?", user)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []Post
+	for rows.Next() {
+		var post Post
+		err := rows.Scan(&post.User, &post.Id, &post.Like, &post.Deslike, &post.Post)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
 }
 
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
@@ -45,12 +73,41 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+
 	authorized, username := d.authorize(r)
-	post := r.FormValue("textarea")
-	d.insertPost(post, username)
-	info := d.getPosts(username)
-	info.auth = authorized
-	tmp.Execute(w, info)
+	if !authorized {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		post := r.FormValue("textarea")
+		if post != "" {
+			err := d.insertPost(post, username)
+			if err != nil {
+				http.Error(w, "Failed to insert post", http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
+	posts, err := d.getPosts(username)
+	if err != nil {
+		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Authorized bool
+		Username   string
+		Posts      []Post
+	}{
+		Authorized: authorized,
+		Username:   username,
+		Posts:      posts,
+	}
+
+	tmp.Execute(w, data)
 }
 
 func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
