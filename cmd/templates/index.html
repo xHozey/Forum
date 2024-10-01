@@ -9,15 +9,17 @@
     <header>
       <nav>
         <ul>
-          {{ if .}}
+          {{ if .n }}
+          <li><a href="/logout">Log out</a></li>
+          {{ else }}
           <li><a href="/register">Sign up</a></li>
           <li><a href="/login">Log in</a></li>
-          <li><a href="/logout">Log out</a></li>
+          {{ end }}
         </ul>
       </nav>
     </header>
     <main>
-      <h1> {{ .Name }} </h1>
+      <h1> {{ .u }} </h1>
       <form action="/" method="post">
         <div class="input">
           <textarea name="textarea" id=""> </textarea>
