@@ -17,7 +17,7 @@ func (d *MyDB) authorize(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
-
+	
 	var uid string
 	d.MyData.QueryRow("SELECT uid FROM login WHERE uid = ?", c.Value).Scan(&uid)
 	return c.Value == uid
