@@ -48,8 +48,8 @@ func (d *MyDB) insertPost(post string, user string) error {
 	return nil
 }
 
-func (d *MyDB) getPosts(user string) ([]Post, error) {
-	rows, err := d.MyData.Query("SELECT user, id, likes, deslikes, post FROM posts WHERE user = ?", user)
+func (d *MyDB) getPosts() ([]Post, error) {
+	rows, err := d.MyData.Query("SELECT user, id, likes, deslikes, post FROM posts")
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := d.getPosts(username)
+	posts, err := d.getPosts()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
