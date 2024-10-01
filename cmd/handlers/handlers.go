@@ -68,6 +68,20 @@ func (d *MyDB) getPosts(user string) ([]Post, error) {
 	return posts, nil
 }
 
+func (d *MyDB) PostsUser(w http.ResponseWriter, r *http.Request) {
+	post := r.FormValue("textarea")
+	if post != "" {
+		_, username := d.authorize(r)
+		err := d.insertPost(post, username)
+		if err != nil {
+			fmt.Print(err)
+			http.Error(w, "Failed to insert post", http.StatusInternalServerError)
+			return
+		}
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	tmp, err := template.ParseFiles("./cmd/templates/index.html")
 	if err != nil {
@@ -79,18 +93,6 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	if !authorized {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
-	}
-
-	if r.Method == http.MethodPost {
-		post := r.FormValue("textarea")
-		if post != "" {
-			err := d.insertPost(post, username)
-			if err != nil {
-				fmt.Print(err)
-				http.Error(w, "Failed to insert post", http.StatusInternalServerError)
-				return
-			}
-		}
 	}
 
 	posts, err := d.getPosts(username)
