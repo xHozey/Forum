@@ -4,15 +4,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="visualize/index.css">
   <title>register</title>
 </head>
 
 <body>
+  <header>
+    <ul>
+      <li><a href="/login">Log in</a></li>
+    </ul>
+  </header>
   <form action="/register" method="POST">
-
     <div class="container">
       <div>
-        <label for="name">name:</label>
+        <label for="email">Emile:</label>
+        <input name="email" type="email" id="email" />
+      </div>
+      <div></div>
+        <label for="name">Name:</label>
         <input name="user" type="text" id="name" />
       </div>
       <div>

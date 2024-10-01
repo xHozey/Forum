@@ -39,6 +39,7 @@ func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		template.Must(template.ParseFiles("./cmd/templates/register.htm")).Execute(w, nil)
 		return
+		
 	}
 
 	name := r.FormValue("user")
