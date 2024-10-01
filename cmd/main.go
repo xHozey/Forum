@@ -26,7 +26,7 @@ func main() {
 		os.Exit(0)
 	}
 	stm.Exec()
-	stm, err = db.Prepare("CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT ,user TEXT NOT NULL, post TEXT NOT NULL, comments NOT NULL, likes INTEGER, deslikes INTEGER)")
+	stm, err = db.Prepare("CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT ,user TEXT, post TEXT, comments TEXT, likes INTEGER DEFAULT 0, deslikes INTEGER DEFAULT 0)")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)

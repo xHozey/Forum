@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gofrs/uuid"
 	_ "github.com/mattn/go-sqlite3"
@@ -48,7 +49,7 @@ func (d *MyDB) insertPost(post string, user string) error {
 }
 
 func (d *MyDB) getPosts(user string) ([]Post, error) {
-	rows, err := d.MyData.Query("SELECT user, id, likes, dislikes, post FROM posts WHERE user = ?", user)
+	rows, err := d.MyData.Query("SELECT user, id, likes, deslikes, post FROM posts WHERE user = ?", user)
 	if err != nil {
 		return nil, err
 	}
@@ -85,6 +86,7 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 		if post != "" {
 			err := d.insertPost(post, username)
 			if err != nil {
+				fmt.Print(err)
 				http.Error(w, "Failed to insert post", http.StatusInternalServerError)
 				return
 			}
@@ -93,6 +95,8 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := d.getPosts(username)
 	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
 		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
 		return
 	}

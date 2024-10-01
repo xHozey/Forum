@@ -1,44 +1,40 @@
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home Page</title>
-  </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+</head>
+<body>
+    <h1>Welcome, {{.Username}}!</h1>
 
-  <body>
-    <header>
-      <nav>
+    <!-- Display the list of posts -->
+    <h2>Your Posts:</h2>
+    {{ if .Posts }}
         <ul>
-          {{ if .N }}
-          <li><a href="/logout">Log out</a></li>
-          {{ else }}
-          <li><a href="/register">Sign up</a></li>
-          <li><a href="/login">Log in</a></li>
-          {{ end }}
+            {{ range .Posts }}
+                <li>
+                    <strong>{{ .User }}</strong>: {{ .Post }}
+                    <br>
+                    Likes: {{ .Like }} | Dislikes: {{ .Deslike }}
+                </li>
+            {{ end }}
         </ul>
-      </nav>
-    </header>
-    <main>
-      <h1> {{ .U }} </h1>
-      <form action="/" method="post">
-        <div class="input">
-          <textarea name="textarea" id=""> </textarea>
-        </div>
-        <button type="submit">submit</button>
-      </form>
-      <div class="post">
-        <p>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam beatae
-          deleniti maxime inventore consequuntur neque eaque veritatis esse
-          autem expedita adipisci culpa ut repudiandae non exercitationem
-          provident, possimus numquam maiores!
-        </p>
-        <div class="comments">
-          <ul>
-            <li class="comment"></li>
-          </ul>
-        </div>
-      </div>
-    </main>
-  </body>
+    {{ else }}
+        <p>You have no posts yet.</p>
+    {{ end }}
+
+    <!-- New post form -->
+    <h3>Create a new post</h3>
+    <form method="post" action="/">
+        <textarea name="textarea" rows="5" cols="40" placeholder="Write something..."></textarea>
+        <br>
+        <button type="submit">Post</button>
+    </form>
+
+    <!-- Logout button -->
+    <form method="post" action="/logout">
+        <button type="submit">Logout</button>
+    </form>
+</body>
 </html>
