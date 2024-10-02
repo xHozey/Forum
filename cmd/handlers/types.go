@@ -7,11 +7,17 @@ type MyDB struct {
 }
 
 type Post struct {
-	Id int
+	Id      int
 	User    string
 	Post    string
-	Comment string
+	Comment []string
 	Like    int
 	Deslike int
-	auth bool
+	Auth    bool
+}
+
+type User struct {
+	Auth     bool
+	Username string
+	Posts    []Post
 }

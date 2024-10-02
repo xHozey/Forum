@@ -6,114 +6,41 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
+	"strconv"
 
-	"github.com/gofrs/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (d *MyDB) authorize(r *http.Request) (bool, string) {
-	c, err := r.Cookie("session_token")
-	if err != nil {
-		return false, ""
-	}
-
-	var uid string
-	var username string
-	err = d.MyData.QueryRow("SELECT uid, user FROM login WHERE uid = ?", c.Value).Scan(&uid, &username)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, ""
-		}
-		fmt.Println("Database error:", err)
-		return false, ""
-	}
-
-	return c.Value == uid, username
-}
-
-func (d *MyDB) insertPost(post string, user string) error {
-	stm, err := d.MyData.Prepare("INSERT INTO posts (post, user) VALUES (?, ?)")
-	if err != nil {
-		return err
-	}
-	defer stm.Close()
-
-	_, err = stm.Exec(post, user)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (d *MyDB) getPosts() ([]Post, error) {
-	rows, err := d.MyData.Query("SELECT user, id, likes, deslikes, post FROM posts")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var posts []Post
-	for rows.Next() {
-		var post Post
-		err := rows.Scan(&post.User, &post.Id, &post.Like, &post.Deslike, &post.Post)
-		if err != nil {
-			return nil, err
-		}
-		posts = append(posts, post)
-	}
-
-	return posts, nil
-}
-
-func (d *MyDB) PostsUser(w http.ResponseWriter, r *http.Request) {
-	post := r.FormValue("textarea")
-	if post != "" {
-		_, username := d.authorize(r)
-		err := d.insertPost(post, username)
-		if err != nil {
-			fmt.Print(err)
-			http.Error(w, "Failed to insert post", http.StatusInternalServerError)
-			return
-		}
-	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	tmp, err := template.ParseFiles("./cmd/templates/index.html")
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	authorized, username := d.authorize(r)
-	if !authorized {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-	}
 
 	posts, err := d.getPosts()
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(2)
 		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
 		return
 	}
-
-	data := struct {
-		Authorized bool
-		Username   string
-		Posts      []Post
-	}{
-		Authorized: authorized,
-		Username:   username,
-		Posts:      posts,
+	data := User{
+		Auth:     authorized,
+		Username: username,
+		Posts:    posts,
 	}
+	err = tmp.Execute(w, data)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
 
-	tmp.Execute(w, data)
+func (s *User) test() {
+	
 }
 
 func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
@@ -181,13 +108,15 @@ func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
 		if err == sql.ErrNoRows {
 			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		} else {
-			log.Printf("Database error: %v", err)
+			fmt.Println(err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(password)); err != nil {
+	err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(password))
+	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -195,7 +124,7 @@ func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
 	newUID := generateUID()
 	_, err = d.MyData.Exec("UPDATE login SET uid = ? WHERE user = ?", newUID, name)
 	if err != nil {
-		log.Printf("Database error: %v", err)
+		fmt.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -207,11 +136,11 @@ func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
 func (d *MyDB) Logout(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie("session_token")
 	if err != nil && err != http.ErrNoCookie {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	_, err = d.MyData.Exec("UPDATE login SET uid = '' WHERE uid = ?", c.Value)
 	if err != nil {
-		log.Printf("Database error during logout: %v", err)
+		fmt.Println(err)
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -223,15 +152,41 @@ func (d *MyDB) Logout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func generateUID() string {
-	return uuid.Must(uuid.NewV4()).String()
-}
+func (d *MyDB) PostsUser(w http.ResponseWriter, r *http.Request) {
+	post := r.FormValue("textarea")
+	comment := r.FormValue("comment")
+	postID := r.FormValue("postID")
+	auth, username := d.authorize(r)
 
-func setSessionCookie(w http.ResponseWriter, uid string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:   "session_token",
-		Value:  uid,
-		Path:   "/",
-		MaxAge: 3600,
-	})
+	if post != "" && auth {
+		err := d.insertPost(post, username)
+		if err != nil {
+			fmt.Print(err)
+			http.Error(w, "Failed to insert post", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if comment != "" && postID != "" {
+		id, err := strconv.Atoi(postID)
+		if err != nil {
+			fmt.Println(err)
+		}
+		err = d.insertComment(comment, id)
+		if err != nil {
+			fmt.Println(err)
+		}
+		// Fetch comments after inserting a new comment
+		comments := d.getComment(id)
+
+		// Update the specific post with its comments
+		for i := 0; i < len(data.Posts); i++ {
+			if data.Posts[i].Id == id {
+				data.Posts[i].Comment = comments
+				break // Exit loop once the correct post is found and updated
+			}
+		}
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

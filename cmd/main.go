@@ -32,6 +32,19 @@ func main() {
 		os.Exit(0)
 	}
 	stm.Exec()
+	stm, err = db.Prepare(`
+    CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id INTEGER NOT NULL,
+        comment TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+    )
+`)
+	if err != nil {
+		fmt.Println("1", err)
+	}
+	stm.Exec()
 	data.MyData = db
 	http.HandleFunc("/", data.HomePage)
 	http.HandleFunc("/login", data.LoginPage)

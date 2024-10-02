@@ -1,40 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Homepage</title>
 </head>
+
 <body>
     <h1>Welcome, {{.Username}}!</h1>
 
-    <!-- Display the list of posts -->
     <h2>Your Posts:</h2>
     {{ if .Posts }}
+    <ul>
+        {{ range .Posts }}
+        <li>
+            <strong>{{ .User }}</strong>: {{ .Post }}
+            <br>
+            Likes: {{ .Like }} | Dislikes: {{ .Deslike }}
+        </li>
+
+        <form method="post" action="/post">
+            <input type="text" name="comment" placeholder="Add a comment...">
+            <input type="hidden" name="postID" value="{{ .Id }}">
+            <button type="submit">Send</button>
+        </form>
+
         <ul>
-            {{ range .Posts }}
-                <li>
-                    <strong>{{ .User }}</strong>: {{ .Post }}
-                    <br>
-                    Likes: {{ .Like }} | Dislikes: {{ .Deslike }}
-                </li>
+            {{ range .Comment }}
+            <li>{{ . }}</li>
             {{ end }}
         </ul>
+        {{ end }}
+    </ul>
     {{ else }}
-        <p>You have no posts yet.</p>
+    <p>You have no posts yet.</p>
     {{ end }}
 
-    <!-- New post form -->
     <h3>Create a new post</h3>
-    <form method="get" action="/post">
+    <form method="post" action="/post">
         <textarea name="textarea" rows="5" cols="40" placeholder="Write something..."></textarea>
         <br>
         <button type="submit">Post</button>
     </form>
-
-    <!-- Logout button -->
+    {{ if .Auth }}
     <form method="post" action="/logout">
         <button type="submit">Logout</button>
     </form>
+    {{ end }}
+
+
 </body>
+
 </html>
