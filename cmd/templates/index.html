@@ -8,7 +8,22 @@
 </head>
 
 <body>
+    {{ if .Auth }}
+    <a href="/logout"><button>log out</button></a>
+    {{ else }}
+    <a href="/login"><button>log in</button></a>
+    <a href="/register"><button>register</button></a>
+    {{ end }}
     <h1>Welcome, {{.Username}}!</h1>
+
+    {{ if .Auth }}
+    <h3>Create a new post</h3>
+    <form method="post" action="/post">
+        <textarea name="textarea" rows="5" cols="40" placeholder="Write something..."></textarea>
+        <br>
+        <button type="submit">Post</button>
+    </form>
+    {{ end }}
 
     <h2>Your Posts:</h2>
     {{ if .Posts }}
@@ -17,6 +32,14 @@
         <li>
             <strong>{{ .User }}</strong>: {{ .Post }}
             <br>
+            <form action="/">
+                <input type="hidden" value="{{ .Id }}" name="like">
+                <button type="submit">Like</button>
+            </form>
+            <form action="/">
+                <input type="hidden" value="{{ .Id }}" name="deslike">
+                <button type="submit">DesLike</button>
+            </form>
             Likes: {{ .Like }} | Dislikes: {{ .Deslike }}
         </li>
 
@@ -26,28 +49,22 @@
             <button type="submit">Send</button>
         </form>
 
-        <ul>
-            {{ range .Comment }}
-            <li>{{ . }}</li>
-            {{ end }}
-        </ul>
-        {{ end }}
+        <details>
+            <summary>Show Comments</summary>
+            <ul>
+                {{ range .Comment }}
+                <li>{{ . }}</li>
+                {{ end }}
+            </ul>
+        </details>
+    </ul>
+    {{ end }}
     </ul>
     {{ else }}
     <p>You have no posts yet.</p>
     {{ end }}
 
-    <h3>Create a new post</h3>
-    <form method="post" action="/post">
-        <textarea name="textarea" rows="5" cols="40" placeholder="Write something..."></textarea>
-        <br>
-        <button type="submit">Post</button>
-    </form>
-    {{ if .Auth }}
-    <form method="post" action="/logout">
-        <button type="submit">Logout</button>
-    </form>
-    {{ end }}
+
 
 
 </body>

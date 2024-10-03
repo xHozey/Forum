@@ -21,26 +21,44 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authorized, username := d.authorize(r)
-
+	data := User{}
+	data.Auth = authorized
+	data.Username = username
 	posts, err := d.getPosts()
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Failed to retrieve posts", http.StatusInternalServerError)
 		return
 	}
-	data := User{
-		Auth:     authorized,
-		Username: username,
-		Posts:    posts,
+	data.Posts = posts
+	like := r.FormValue("like")
+	deslike := r.FormValue("deslike")
+	var likeID, deslikeID int
+	if like != "" {
+		likeID, err = strconv.Atoi(like)
+		if err != nil {
+			fmt.Println(err)
+		}
+		d.insertLike(likeID, username)
 	}
+	if deslike != "" {
+		deslikeID, err = strconv.Atoi(deslike)
+		if err != nil {
+			fmt.Println(err)
+		}
+		d.insertDeslike(deslikeID, username)
+	}
+	for i := range posts {
+
+		comments := d.getComment(data.Posts[i].Id)
+		data.Posts[i].Comment = append(data.Posts[i].Comment, comments...)
+		data.Posts[i].Like, data.Posts[i].Deslike = d.getLikes(data.Posts[i].Id)
+	}
+
 	err = tmp.Execute(w, data)
 	if err != nil {
 		fmt.Println(err)
 	}
-}
-
-func (s *User) test() {
-	
 }
 
 func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
@@ -176,17 +194,7 @@ func (d *MyDB) PostsUser(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		// Fetch comments after inserting a new comment
-		comments := d.getComment(id)
 
-		// Update the specific post with its comments
-		for i := 0; i < len(data.Posts); i++ {
-			if data.Posts[i].Id == id {
-				data.Posts[i].Comment = comments
-				break // Exit loop once the correct post is found and updated
-			}
-		}
 	}
-
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

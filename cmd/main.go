@@ -26,7 +26,7 @@ func main() {
 		os.Exit(0)
 	}
 	stm.Exec()
-	stm, err = db.Prepare("CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT ,user TEXT, post TEXT, comments TEXT, likes INTEGER DEFAULT 0, deslikes INTEGER DEFAULT 0)")
+	stm, err = db.Prepare("CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT ,user TEXT, post TEXT, comments TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(0)
@@ -41,6 +41,11 @@ func main() {
         FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
     )
 `)
+	if err != nil {
+		fmt.Println("1", err)
+	}
+	stm.Exec()
+	stm, err = db.Prepare("CREATE TABLE IF NOT EXISTS likes (id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER NOT NULL, user TEXT NOT NULL,like_count INTEGER DEFAULT 0, deslike_count INTEGER DEFAULT 0, UNIQUE (user, post_id),FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE)")
 	if err != nil {
 		fmt.Println("1", err)
 	}
