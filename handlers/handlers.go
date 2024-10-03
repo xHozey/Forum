@@ -48,6 +48,7 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 		}
 		d.insertDeslike(deslikeID, username)
 	}
+	// fill our data variable with all posts
 	for i := range posts {
 		comments := d.getComment(data.Posts[i].Id)
 		data.Posts[i].Comment = append(data.Posts[i].Comment, comments...)

@@ -2,6 +2,9 @@ package forum
 
 import "fmt"
 
+// we check if user hasn't liked if not we insert he's username in likes table and increment
+// likes count in posts table else if he already liked we delete he's username from likes table
+// and desincrement post likes
 func (d *MyDB) insertLike(id int, user string) {
 	var exists bool
 
@@ -34,6 +37,7 @@ func (d *MyDB) insertLike(id int, user string) {
 	}
 }
 
+// read inserLike descreption
 func (d *MyDB) insertDeslike(id int, user string) {
 	var exists bool
 
@@ -66,6 +70,7 @@ func (d *MyDB) insertDeslike(id int, user string) {
 	}
 }
 
+// we insert the comment and post id into comments table
 func (d *MyDB) insertComment(cmn string, postID int) error {
 	var exists bool
 	err := d.MyData.QueryRow("SELECT EXISTS(SELECT 1 FROM posts WHERE id = ?)", postID).Scan(&exists)
@@ -85,6 +90,7 @@ func (d *MyDB) insertComment(cmn string, postID int) error {
 	return nil
 }
 
+// insert post and user of who post in posts table
 func (d *MyDB) insertPost(post string, user string) error {
 	stm, err := d.MyData.Prepare("INSERT INTO posts (post, user) VALUES (?, ?)")
 	if err != nil {

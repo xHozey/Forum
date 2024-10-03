@@ -8,6 +8,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+// check if the user is logged in if he's logged we return he's username with true boolean else we return empty string with false
 func (d *MyDB) authorize(r *http.Request) (bool, string) {
 	c, err := r.Cookie("session_token")
 	if err != nil {
@@ -28,10 +29,12 @@ func (d *MyDB) authorize(r *http.Request) (bool, string) {
 	return c.Value == uid, username
 }
 
+// generate unique random token for users
 func generateUID() string {
 	return uuid.Must(uuid.NewV4()).String()
 }
 
+// give user a cookie
 func setSessionCookie(w http.ResponseWriter, uid string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:   "session_token",

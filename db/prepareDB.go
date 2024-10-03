@@ -6,6 +6,7 @@ import (
 )
 
 func PrepareDataBase(db *sql.DB) {
+	// Creat login table that holds information about the user
 	stm, err := db.Prepare(`
 	CREATE TABLE IF NOT EXISTS login (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,6 +18,7 @@ func PrepareDataBase(db *sql.DB) {
 		fmt.Println(err)
 	}
 	stm.Exec()
+	// creat posts table that hold post with some informations
 	stm, err = db.Prepare(`
 	CREATE TABLE IF NOT EXISTS posts (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,6 +32,7 @@ func PrepareDataBase(db *sql.DB) {
 		fmt.Println(err)
 	}
 	stm.Exec()
+	// creat comments table that hold user comments linked with posts table id
 	stm, err = db.Prepare(`
     CREATE TABLE IF NOT EXISTS comments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,6 +47,7 @@ func PrepareDataBase(db *sql.DB) {
 		fmt.Println(err)
 	}
 	stm.Exec()
+	// creat like table to track who liked if he already liked and like again we must reset the like
 	stm, err = db.Prepare(`CREATE TABLE IF NOT EXISTS likes (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	post_id INTEGER NOT NULL,
@@ -54,6 +58,7 @@ func PrepareDataBase(db *sql.DB) {
 		fmt.Println(err)
 	}
 	stm.Exec()
+	// same as like table
 	stm, err = db.Prepare(`CREATE TABLE IF NOT EXISTS deslikes (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	post_id INTEGER NOT NULL,
