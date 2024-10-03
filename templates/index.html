@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+</head>
+
+<body>
+    <script>
+        let auth = "{{ .Auth }}" === "true";
+        let username = "{{ .Username }}";
+        if (auth) {
+            document.write(`
+                <div id="session">
+                    <a href="/logout"><button>Log Out</button></a>
+                    <h1>Welcome, ${username}!</h1>
+                    <h3>Create a new post</h3>
+                    <form method="post" action="/post">
+                        <textarea name="textarea" rows="5" cols="40" placeholder="Write something..."></textarea>
+                        <br>
+                        <button type="submit">Post</button>
+                    </form>
+                </div>
+            `);
+        } else {
+            document.write(`
+                <div id="guest">
+                    <a href="/login"><button>Log In</button></a>
+                    <a href="/register"><button>Register</button></a>
+                </div>
+            `);
+        }
+    </script>
+
+    <h2>Your Posts:</h2>
+    {{ if .Posts }}
+    <ul>
+        {{ range .Posts }}
+        <li>
+            <strong>{{ .User }}</strong>: {{ .Post }}
+            <br>
+            <script>
+                if (auth) {
+                    document.write(`<form action="/" method="post">
+                        <input type="hidden" value="{{ .Id }}" name="like">
+                        <button type="submit">Like</button>
+                        </form>
+                        <form action="/" method="post">
+                            <input type="hidden" value="{{ .Id }}" name="deslike">
+                            <button type="submit">DesLike</button>
+                            </form>`)
+                }
+            </script>
+            Likes: {{ .Like }} | Dislikes: {{ .Deslike }}
+        </li>
+        <script>
+            if (auth) {
+                document.write(`<form method="post" action="/post">
+                    <input type="text" name="comment" placeholder="Add a comment...">
+                    <input type="hidden" name="postID" value="{{ .Id }}">
+                    <button type="submit">Send</button>
+                    </form>`)
+            }
+        </script>
+        <details>
+            <summary>Show Comments</summary>
+            <ul>
+                {{ range .Comment }}
+                <li>{{ . }}</li>
+                {{ end }}
+            </ul>
+        </details>
+        {{ end }}
+    </ul>
+    {{ else }}
+    <p>You have no posts yet.</p>
+    {{ end }}
+</body>
+
+</html>

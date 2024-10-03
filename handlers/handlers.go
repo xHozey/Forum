@@ -1,4 +1,4 @@
-package handlers
+package forum
 
 import (
 	"database/sql"
@@ -13,7 +13,7 @@ import (
 )
 
 func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
-	tmp, err := template.ParseFiles("./cmd/templates/index.html")
+	tmp, err := template.ParseFiles("./templates/index.html")
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -49,12 +49,10 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 		d.insertDeslike(deslikeID, username)
 	}
 	for i := range posts {
-
 		comments := d.getComment(data.Posts[i].Id)
 		data.Posts[i].Comment = append(data.Posts[i].Comment, comments...)
 		data.Posts[i].Like, data.Posts[i].Deslike = d.getLikes(data.Posts[i].Id)
 	}
-
 	err = tmp.Execute(w, data)
 	if err != nil {
 		fmt.Println(err)
@@ -63,7 +61,7 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 
 func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		template.Must(template.ParseFiles("./cmd/templates/register.htm")).Execute(w, nil)
+		template.Must(template.ParseFiles("./templates/register.htm")).Execute(w, nil)
 		return
 
 	}
@@ -110,7 +108,7 @@ func (d *MyDB) RegisterPage(w http.ResponseWriter, r *http.Request) {
 
 func (d *MyDB) LoginPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		template.Must(template.ParseFiles("./cmd/templates/login.html")).Execute(w, nil)
+		template.Must(template.ParseFiles("./templates/login.html")).Execute(w, nil)
 		return
 	}
 

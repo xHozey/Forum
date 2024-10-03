@@ -1,4 +1,4 @@
-package handlers
+package forum
 
 import "database/sql"
 
