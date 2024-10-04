@@ -43,3 +43,19 @@ func setSessionCookie(w http.ResponseWriter, uid string) {
 		MaxAge: 3600,
 	})
 }
+
+func deleteCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   "session_token",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+}
+
+// refrech the session
+func refrechCooki(w http.ResponseWriter) string {
+	newToken := generateUID()
+	setSessionCookie(w, newToken)
+	return newToken
+}

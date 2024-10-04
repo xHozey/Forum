@@ -54,6 +54,15 @@ func (d *MyDB) HomePage(w http.ResponseWriter, r *http.Request) {
 		data.Posts[i].Comment = append(data.Posts[i].Comment, comments...)
 		data.Posts[i].Like, data.Posts[i].Deslike = d.getLikes(data.Posts[i].Id)
 	}
+	if authorized {
+		uid := refrechCooki(w)
+		_, err = d.MyData.Exec("UPDATE login SET uid = ? WHERE user = ?", uid, username)
+		if err != nil {
+			log.Printf("Database error: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
 	err = tmp.Execute(w, data)
 	if err != nil {
 		fmt.Println(err)
