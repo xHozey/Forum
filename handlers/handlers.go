@@ -168,13 +168,7 @@ func (d *MyDB) Logout(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:   "session_token",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	})
+	deleteCookie(w)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
